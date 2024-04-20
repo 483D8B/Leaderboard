@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://483d8b.pythonanywhere.com/leitner.min.js"></script>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <style>
+        /* CSS Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .leaderboard {
+            font-family: Arial, sans-serif;
+            width: 50%;
+            margin: auto;
+        }
+
+        .entry {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #ccc;
+            padding: 2px 0;
+        }
+
+        .icon {
+            font-size: 2em;
+            margin-right: 10px;
+        }
+
+        .points {
+            margin-left: auto;
+        }
+
+        .league {
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        #leagues {
+            display: flex;
+            flex-wrap: wrap;
+            flex-direction: row;
+            align-items: center;
+        }
+
+        /* Your style here*/
+    </style>
+</head>
+
+<body>
+    <!-- Your content here -->
+
+    <div id="leagues">
+        <!-- League labels will be inserted here -->
+    </div>
+    <div class="leaderboard" id="leaderboard">
+        <!-- Leaderboard entries will be inserted here -->
+    </div>
+
+    <script>
+        // Your script here
+
+        // Array of league names
+        var leagues = ["Bronze", "Silver", "Gold", "Sapphire", "Ruby", "Emerald", "Amethyst", "Pearl", "Obsidian", "Diamond"];
+
+        // Array of image URLs
+        var images = [
+            "Badge_Bronze_Blank.webp",
+            "Badge_Silver_Blank.webp",
+            "Badge_Gold_Blank.webp",
+            "Badge_Sapphire_Blank.webp",
+            "Badge_Ruby_Blank.webp",
+            "Badge_Emerald_Blank.webp",
+            "Badge_Amethyst_Blank.webp",
+            "Badge_Pearl_Blank.webp",
+            "Badge_Obsidian_Blank.webp",
+            "Badge_Diamond_Blank.webp"
+        ];
+
+        // Create a label for each league
+        for (var i = 0; i < leagues.length; i++) {
+            var league = document.createElement("div");
+            league.className = "league";
+
+            // Create an img element for the league icon
+            var img = document.createElement("img");
+            img.src = images[i];
+            img.alt = leagues[i] + " icon";
+            img.id = leagues[i];  // Set the id attribute to the league name
+            img.width = 48;
+            img.height = 48;
+
+            // Append the img element to the league div
+            league.appendChild(img);
+
+            document.getElementById("leagues").appendChild(league);
+        }
+
+        // Get an array of the object's keys
+        const keys = Object.keys(Differences);
+
+        // Get the last key
+        const lastKey = keys[keys.length - 1];
+
+        const baseline = 60;
+        const maxScore = 100;
+        // Calculate the score for the player (Chris)
+        const minutesStudied = 60; // You can change this value
+
+        const chrisScore = Math.sqrt(minutesStudied / baseline) * maxScore;
+
+        // Define a baseline effort for all bots
+        const baselineEffort = 10;
+
+        // Define bot personalities and their effort factors
+        const botPersonalities = {
+            diligent: { effortFactor: 1.2, probability: 0.15 }, // Diligent bots make more effort but are less common
+            lazy: { effortFactor: 0.8, probability: 0.5 }, // Lazy bots make less effort and are more common
+            distracted: { effortFactor: 0.6, probability: 0.2 }, // Easily distracted bots make even less effort and are more common
+            depressed: { effortFactor: 0.1, probability: 0.15 }, // Depressed bots make very minimal effert and are not so common
+        };
+
+
+        // Fetch the bots data from the JSON file
+        fetch('bots.json')
+            .then(response => response.json())
+            .then(bots => {
+                // Create an array to store the entries
+                const entries = [];
+
+
+                // Create an entry for each bots
+                for (var i = 0; i < bots.length; i++) {
+
+                    const botName = bots[i].name;
+                    // Generate a random score with a minimum baseline effort
+                    let botEffort = Math.max(Math.random() * maxScore, baselineEffort);
+
+                    // Choose a personality for the bot based on real-world probabilities
+                    const randomPersonality = getRandomPersonality(botPersonalities);
+                    const effortFactor = botPersonalities[randomPersonality].effortFactor;
+
+                    // Calculate bot points with adjusted effort
+                    const botPoints = Math.pow(botEffort / baseline, 2) * maxScore * effortFactor;
+
+                    // Create a new div for the entry
+                    var entry = document.createElement("div");
+                    entry.className = "entry";
+
+                    // Get the bots icon
+                    var icon = document.createElement("span");
+                    icon.className = "icon";
+                    icon.textContent = bots[i].emoji;
+
+                    // Create a span for the country name
+                    var name = document.createElement("span");
+                    name.textContent = bots[i].name;
+
+                    // Generate random points
+                    var points = document.createElement("span");
+                    points.className = "points";
+
+                    points.textContent = (bots[i].name === "christian") ? chrisScore.toFixed(2) : botPoints.toFixed(2);
+
+                    // Append the icon, name, and points to the entry
+                    entry.appendChild(icon);
+                    entry.appendChild(name);
+                    entry.appendChild(points);
+
+                    // Add the entry to the entries array
+                    entries.push({ element: entry, points: parseInt(points.textContent) });
+                }
+
+
+                // Sort the entries array by points in descending order
+                entries.sort((a, b) => b.points - a.points);
+
+                // Get the leaderboard div
+                var leaderboard = document.getElementById("leaderboard");
+
+                // Append the sorted entries to the leaderboard
+                for (var i = 0; i < entries.length; i++) {
+                    leaderboard.appendChild(entries[i].element);
+                }
+                // Create an array of country data
+                var countries = bots.map(bots => {
+                    return {
+                        name: bots.name,
+                        bots: bots.emoji
+                    };
+                });
+
+
+                // fetch('https://483d8b.pythonanywhere.com/addCountries', {
+                //     method: 'POST',
+                //     headers: {
+                //         'Content-Type': 'application/json'
+                //     },
+                //     body: JSON.stringify(countries)  // Send the country names and flags as JSON
+                // })
+                //     .then(response => response.json())
+                //     .then(data => console.log(data))
+                //     .catch((error) => {
+                //         console.error('Error:', error);
+                //     });
+
+
+                fetch('https://483d8b.pythonanywhere.com/addScore', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(entries.map(entry => ({ country: entry.element.children[1].textContent, points: entry.points, league: 'Bronze' })))
+                })
+                    .then(response => response.json())
+                    .then(data => console.log(data))
+                    .catch((error) => {
+                        console.error('Error:', error);
+                    });
+
+            })
+            .catch(error => console.error('Error:', error));
+
+
+        // // Send the league names to the server to populate the Leagues table
+        // fetch('https://483d8b.pythonanywhere.com/addLeagues', {
+        //     method: 'POST',
+        //     headers: {
+        //         'Content-Type': 'application/json'
+        //     },
+        //     body: JSON.stringify(leagues)  // Send the league names as JSON
+        // })
+        //     .then(response => response.json())
+        //     .then(data => console.log(data))
+        //     .catch((error) => {
+        //         console.error('Error:', error);
+        //     });
+
+        function getRandomPersonality(botPersonalities) {
+            const totalProbability = Object.values(botPersonalities).reduce((total, personality) => total + personality.probability, 0);
+            let random = Math.random() * totalProbability;
+            let accumulatedProbability = 0;
+            for (let personality in botPersonalities) {
+                accumulatedProbability += botPersonalities[personality].probability;
+                if (random < accumulatedProbability) {
+                    return personality;
+                }
+            }
+        }
+
+
+        function estimateFairness(baseline, maxScore, bots, minutesStudied) {
+            // Generate points for 30 days for Chris
+            const chrisPointsFor30Days = [];
+            for (let day = 1; day <= 30; day++) {
+                // Simulate minutes studied (you can adjust this based on your scenario)
+                const chrisScore = Math.sqrt(minutesStudied / baseline) * maxScore;
+                chrisPointsFor30Days.push(chrisScore);
+            }
+
+            const botScores = {};
+            // Create an object to store bot scores (replace with actual bot names)
+            for (let i = 0; i < bots.length; i++) {
+                // If the bot's name is not "christian", add it to the botScores object
+                if (bots[i].name !== "christian") {
+                    botScores[bots[i].name] = [];
+                }
+            }
+
+            // Generate points for 30 days for each bot
+            for (let day = 1; day <= 30; day++) {
+                // Simulate minutes studied (you can adjust this based on your scenario)
+
+                // Calculate bot scores (similar to the previous example)
+                for (const botName in botScores) {
+                    const botCurrentScore = Math.random() * maxScore;
+
+                    // Choose a personality for the bot based on real-world probabilities
+                    const randomPersonality = getRandomPersonality(botPersonalities);
+                    const effortFactor = botPersonalities[randomPersonality].effortFactor;
+
+                    const botPoints = Math.pow(botCurrentScore / baseline, 2) * maxScore * effortFactor;
+                    botScores[botName].push(botPoints);
+                }
+            }
+
+            // Convert the botScores object into an array
+            const botScoresArray = Object.keys(botScores).map(botName => {
+                return {
+                    name: botName,
+                    totalPoints: botScores[botName].reduce((sum, points) => sum + points, 0)
+                };
+            });
+
+            // Filter out Chris
+            const botScoresArrayExcludingChris = botScoresArray.filter(bot => bot.name !== 'christian');
+
+            // Sort the array by totalPoints in descending order
+            botScoresArray.sort((a, b) => a.totalPoints - b.totalPoints);
+
+            // Print the sorted bot scores
+            for (const bot of botScoresArray) {
+                console.log(`${bot.name} Total Points for 30 days: ${bot.totalPoints.toFixed(2)}`);
+            }
+
+            // Calculate the sum of points for Chris and bots
+            const totalChrisPoints = chrisPointsFor30Days.reduce((sum, points) => sum + points, 0);
+            const averageChrisPoints = totalChrisPoints / 30;
+
+
+            // Print or save the total points
+            console.log("Total Chris Points for 30 days:", totalChrisPoints.toFixed(2));
+
+            // Calculate the sum of all bot scores (excluding Chris)
+            const botScoresSum = botScoresArrayExcludingChris.reduce((sum, bot) => sum + bot.totalPoints, 0);
+
+            // Calculate the average bot score (excluding Chris)
+            const averageBotScore = botScoresSum / botScoresArrayExcludingChris.length;
+
+
+            // Calculate the fairness difference
+            const fairnessDifference = averageChrisPoints - averageBotScore;
+
+            // Determine the sign based on whether Chris has an advantage or disadvantage
+            const sign = fairnessDifference > 0 ? 'Advantage: ' : 'Disadvantage: ';
+
+            // Print fairness evaluation with the sign
+            console.log(`Fairness Difference: ${sign}${Math.abs(fairnessDifference).toFixed(2)}`);
+
+
+        }
+
+        // Call the function with the appropriate arguments
+        fetch('bots.json')
+            .then(response => response.json())
+            .then(bots => {
+                estimateFairness(baseline, maxScore, bots, 60);
+            });
+
+
+    </script>
+
+</body>
+
+</html>
