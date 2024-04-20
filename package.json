@@ -1,0 +1,13 @@
+{
+    "name": "Leaderboard",
+    "version": "1.0.0",
+    "description": "My Node.js Leaderboard",
+    "main": "leatherboardNodeJS.js",
+    "scripts": {
+      "start": "node leatherboardNodeJS.js"
+    },
+    "dependencies": {
+      "express": "^4.17.1"
+    }
+  }
+  
