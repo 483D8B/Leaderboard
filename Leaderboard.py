@@ -3,8 +3,15 @@ import random
 import requests
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import sys
+
+# Check if today is the last day of the month
+def is_last_day_of_month():
+    today = datetime.today().date()
+    # If the next day's month is not equal to today's, it means today is the last day of the month
+    #return (today + timedelta(days=1)).month != today.month
+    return True
 
 sheetID = '1db4uqW7hlrYwvUXxOg1kXIHH0RoSYRzlIfGpyUNIYs4'
 base = f'https://docs.google.com/spreadsheets/d/{sheetID}/gviz/tq?'
@@ -106,3 +113,8 @@ response = requests.post('https://483d8b.pythonanywhere.com/addScore', headers={
 
 data = response.json()
 print(data)
+
+# If it's the last day of the month, trigger the updateLeagues route
+if is_last_day_of_month():
+    response = requests.post('https://483d8b.pythonanywhere.com/updateLeagues')
+    print(response.json())
