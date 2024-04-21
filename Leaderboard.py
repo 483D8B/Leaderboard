@@ -10,8 +10,7 @@ import sys
 def is_last_day_of_month():
     today = datetime.today().date()
     # If the next day's month is not equal to today's, it means today is the last day of the month
-    #return (today + timedelta(days=1)).month != today.month
-    return True
+    return (today + timedelta(days=1)).month != today.month
 
 sheetID = '1db4uqW7hlrYwvUXxOg1kXIHH0RoSYRzlIfGpyUNIYs4'
 base = f'https://docs.google.com/spreadsheets/d/{sheetID}/gviz/tq?'

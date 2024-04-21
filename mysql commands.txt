@@ -1,0 +1,4 @@
+mysql commands:
+
+UPDATE Leaderboards SET points= 0;
+UPDATE Leaderboards SET league_id= 1;
