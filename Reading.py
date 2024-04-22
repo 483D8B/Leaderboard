@@ -112,8 +112,3 @@ response = requests.post('https://483d8b.pythonanywhere.com/addScore/japBoard', 
 
 data = response.json()
 print(data)
-
-# If it's the last day of the month, trigger the updateLeagues route
-if is_last_day_of_month():
-    response = requests.post('https://483d8b.pythonanywhere.com/updateLeagues')
-    print(response.json())

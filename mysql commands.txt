@@ -2,3 +2,10 @@ mysql commands:
 
 UPDATE Leaderboards SET points= 0;
 UPDATE Leaderboards SET league_id= 1;
+
+
+backup
+mysqldump -u 483d8b -h 483d8b.mysql.pythonanywhere-services.com --set-gtid-purged=OFF --no-tablespaces '483d8b$LeaderboardDB'  > LeaderboardDB-backup.sql
+
+restore
+mysql -u 483d8b -h 483d8b.mysql.pythonanywhere-services.com '483d8b$ReadingDB'  < LeaderboardDB-backup.sql

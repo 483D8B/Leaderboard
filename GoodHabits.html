@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Good habits :)</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <style>
+        /* CSS Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #month {
+            position: relative;
+            left: 50%;
+            transform: translateX(-50%);
+            display: inline-block;
+            font-size: 3em;
+            text-align: center;
+            padding: 0.5em;
+            border: 2px solid black;
+            line-height: 0.2em;
+            margin-top: 0.2em;
+        }
+
+        #calendar {
+            position: relative;
+            transform: translateX(-50%);
+            left: 50%;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1vw;
+            width: 99vw;
+            height: 90vh;
+            padding: 10px;
+
+        }
+
+        .day {
+            border: 1px solid black;
+            text-align: left;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            font-size: 2vw;
+            flex-wrap: wrap;
+            flex-direction: column;
+        }
+
+        .day-text {
+            display: block;
+            border-bottom: 1px dotted gray;
+            width: 100%;
+            white-space: nowrap;
+            color: black;
+            user-select: none;
+            font-family: Verdana, Geneva, sans-serif;
+            font-size: 0.5em;
+            text-align: center;
+            font-weight: 600;
+            order: -1;
+        }
+
+        .day-activity {
+            display: inline-block;
+            order: 0;
+            padding: 0.3em;
+            width: 100%;
+            text-align: center;
+        }
+
+
+        /* Your style here*/
+    </style>
+</head>
+
+<body>
+    <!-- Your content here -->
+    <div id="month"></div>
+    <table id="calendar"></table>
+    <script>
+        // Your script here
+        // Get the current month
+        var date = new Date();
+        var month = date.getMonth(); // JavaScript months are 0-11
+        var year = date.getFullYear();
+        var firstDay = new Date(year, month, 1).getDay();
+        var daysInMonth = 32 - new Date(year, month, 32).getDate();
+
+        // Create an array of month names
+        var monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        var div = document.getElementById('month');
+
+        // Insert the month into the div
+        div.textContent = monthNames[month];
+
+        var calendar = document.getElementById('calendar');
+        var html = '';
+
+        // Define your activities and corresponding colors
+        var activities = {
+            "1": ["running", "swimming", "others", "exercise"],
+            "2": ["yoga", "reading"],
+            "3": ["cooking", "coding"],
+            // Add more activities as needed
+        };
+
+        var colors = {
+            "running": "lightgreen",
+            "swimming": "lightblue",
+            "yoga": "lightyellow",
+            "reading": "lightpink",
+            "cooking": "lightgray",
+            "coding": "lightcoral",
+            "exercise": "red",
+            "others": "pink"
+            // Add more colors as needed
+        };
+
+        // Fill in the blank days before the first day of the month
+        for (var i = 0; i < firstDay; i++) {
+            html += '<div class="day"></div>';
+        }
+
+        // Define your activities and corresponding sizes
+        var activitySizes = {
+            "running": "3vh",
+            "swimming": "2vh",
+            "yoga": "1vh",
+            "reading": "6vh",
+            "cooking": "60px",
+            "coding": "70px",
+            "exercise": "80px",
+            "others": "90px"
+            // Add more sizes as needed
+        };
+
+        // Fill in the days of the month
+        for (var i = 0; i < daysInMonth; i++) {
+            var dayActivities = activities[(i % Object.keys(activities).length) + 1]; // Cycle through the activities
+            html += '<div class="day"><div class="day-text">' + (i + 1) + '</div>'; // Add the day number
+            for (var j = 0; j < dayActivities.length; j++) {
+                var activity = dayActivities[j];
+                var color = colors[activity]; // Get the corresponding color
+                var size = activitySizes[activity]; // Get the corresponding size
+                html += '<div class="day-activity" style="background-color: ' + color + '; height: ' + size + ';">' + activity + '</div>';
+            }
+            html += '</div>';
+        }
+
+        calendar.innerHTML = html;
+
+
+        function addActivity(day, activity) {
+            // Ask the user for the size of the activity
+            var size = prompt('Enter the size for ' + activity + ':');
+
+            // Get the day div
+            var dayDiv = document.getElementById('day-' + day);
+
+            // Create a new div for the activity
+            var activityDiv = document.createElement('div');
+            activityDiv.className = 'day-activity';
+            activityDiv.style.height = size + 'px'; // Set the height
+            activityDiv.textContent = activity;
+
+            // Append the activity div to the day div
+            dayDiv.appendChild(activityDiv);
+        }
+
+    </script>
+
+</body>
+
+</html>
