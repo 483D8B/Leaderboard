@@ -9,3 +9,21 @@ mysqldump -u 483d8b -h 483d8b.mysql.pythonanywhere-services.com --set-gtid-purge
 
 restore
 mysql -u 483d8b -h 483d8b.mysql.pythonanywhere-services.com '483d8b$ReadingDB'  < LeaderboardDB-backup.sql
+
+
+CREATE TABLE PomodoroSessions (
+SessionID INT AUTO_INCREMENT,
+StartDateTime DATETIME,
+WorkMinutes INT,
+PauseCount INT,
+PRIMARY KEY (SessionID)
+);
+
+
+CREATE TABLE TESTPomodoroSessions (
+SessionID INT AUTO_INCREMENT,
+StartDateTime DATETIME,
+WorkMinutes INT,
+PauseCount INT,
+PRIMARY KEY (SessionID)
+);

@@ -324,154 +324,102 @@
     </div>
 
     <script>
-        var timerElement = document.getElementById('timer');
-        var countdown; // Declare countdown variable outside the function
-        var isPaused = false; // Declare a variable to check if the timer is paused
-        var pauseCounter = 0;
-        var startDate = 0
-        var elapsedSecondsTotal = 0; // Add this line at the beginning of your script
-        let isWorkSession = false;
-        var currentBreakType = 'short';
-
-        var startButton = document.getElementById('start');
-        var resetButton = document.getElementById('reset');
-        var sendButton = document.getElementById('send');
-        var shortBreak = document.getElementById('short-break');
-        var longBreak = document.getElementById('long-break');
-        const settings = document.querySelector('#settings');
-        const closeSettingsBtn = document.querySelector('#close-settings-btn');
-        var sessionInput = document.getElementById('session-minutes');
-        var shortBreakInput = document.getElementById('shortBreak-minutes');
-        var longBreakInput = document.getElementById('longBreak-minutes');
-        var pomodoroButton = document.getElementById('pomodoro');
-        var shortBreakButton = document.getElementById('short-break');
-        var longBreakButton = document.getElementById('long-break');
-
-        sessionInput.value = localStorage.getItem('sessionMinutes');;
-        shortBreakInput.value = localStorage.getItem('shortBreakMinutes');;
-        longBreakInput.value = localStorage.getItem('longBreakMinutes');;
-
-
-        var alertBox = document.getElementById('alertBox');
-        var span = document.getElementById('close');
-        var audio = new Audio('water-drop.mp3'); // replace with the URL of your sound file
-
-        // When the user clicks on <span> (x), close the alert box
-        span.onclick = function () {
-            alertBox.style.display = 'none';
-        }
-
-        var totalWorkMinutes = localStorage.getItem('totalWorkMinutes') ? parseInt(localStorage.getItem('totalWorkMinutes')) : 0;
-
-        // Retrieve timeLeft from localStorage or set to sessionMinutes * 60 if not found
-        var timeLeft = localStorage.getItem('timeLeft') ? parseInt(localStorage.getItem('timeLeft')) : localStorage.getItem('sessionMinutes') * 60;
-
-        // Update timer display on page load
-        timerElement.innerHTML = formatTime(timeLeft);
-
         document.addEventListener('DOMContentLoaded', function () {
-            var sessionMinutes = localStorage.getItem('sessionMinutes');
-            var shortBreakMinutes = localStorage.getItem('shortBreakMinutes');
-            var longBreakMinutes = localStorage.getItem('longBreakMinutes');
+            const timerElement = document.getElementById('timer');
+            const startButton = document.getElementById('start');
+            const resetButton = document.getElementById('reset');
+            const sendButton = document.getElementById('send');
+            const shortBreakButton = document.getElementById('short-break');
+            const longBreakButton = document.getElementById('long-break');
+            const settingsButton = document.getElementById('settings');
+            const closeSettingsButton = document.getElementById('close-settings-btn');
+            const sessionInput = document.getElementById('session-minutes');
+            const shortBreakInput = document.getElementById('shortBreak-minutes');
+            const longBreakInput = document.getElementById('longBreak-minutes');
+            const settingsPopup = document.getElementById('settings-popup');
 
-            if (sessionMinutes) {
-                document.getElementById('session-minutes').value = sessionMinutes;
-            }
-            if (shortBreakMinutes) {
-                document.getElementById('shortBreak-minutes').value = shortBreakMinutes;
-            }
-            if (longBreakMinutes) {
-                document.getElementById('longBreak-minutes').value = longBreakMinutes;
-            }
-        });
+            let countdown;
+            let isPaused = false;
+            let elapsedSecondsTotal = 0;
+            let timeLeft = parseInt(localStorage.getItem('timeLeft')) || 25 * 60;
+            let totalWorkMinutes = parseInt(localStorage.getItem('totalWorkMinutes')) || 0;
+            let pauseCounter = parseInt(localStorage.getItem('pauseCount')) || 0;
+            let startDate = localStorage.getItem('startDateTime') ? new Date(localStorage.getItem('startDateTime')) : new Date();
+            let isWorkSession = false;
+            let currentBreakType = 'short';
 
+            // Update timer display on page load
+            timerElement.innerHTML = formatTime(timeLeft);
 
-
-        function startTimer(button, isButtonClicked) {
-            button.classList.remove('active');
-            timerElement.classList.remove('active');
-            var startDate = new Date();
-
-            var startDateOnDB = startDate.getFullYear() + '-' +
-                ('0' + (startDate.getMonth() + 1)).slice(-2) + '-' +
-                ('0' + startDate.getDate()).slice(-2) + ' ' +
-                ('0' + startDate.getHours()).slice(-2) + ':' +
-                ('0' + startDate.getMinutes()).slice(-2) + ':' +
-                ('0' + startDate.getSeconds()).slice(-2);
-
-
-            localStorage.setItem('startDateTime', startDateOnDB);
-            // Check if countdown is already set
-            if (countdown && !isPaused) {
-                button.classList.toggle('active');
-                timerElement.classList.toggle('active');
-                clearInterval(countdown); // Pause the timer
-                countdown = null;
-                isPaused = true;
-                if (!isButtonClicked) { // Only increase the pause counter if a session or break button was not clicked
+            // Function to start or pause the timer
+            function toggleTimer() {
+                if (countdown) {
+                    clearInterval(countdown);
+                    countdown = null;
+                    isPaused = true;
                     pauseCounter++;
                     localStorage.setItem('pauseCount', pauseCounter);
+                    startButton.innerHTML = '<i class="fa-solid fa-play"></i>';
+                } else {
+                    isPaused = false;
+                    startButton.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                    startDate = new Date();
+                    countdown = setInterval(updateTimer, 1000);
                 }
-                button.innerHTML = '<i class="fa-solid fa-play"></i>'; // Change button text to 'Resume'
-                return;
             }
 
-
-            isPaused = false;
-            button.innerHTML = '<i class="fa-solid fa-pause"></i>'; // Change button text to 'Pause'
-
-            countdown = setInterval(function () {
-                var now = new Date();
-                var elapsedSeconds = Math.floor((now - startDate) / 1000);
+            // Function to update the timer display
+            function updateTimer() {
+                const now = new Date();
+                const elapsedSeconds = Math.floor((now - startDate) / 1000);
                 elapsedSecondsTotal += elapsedSeconds;
-                timeLeft = timeLeft - elapsedSeconds;
+                timeLeft -= elapsedSeconds;
                 startDate = now;
 
-                // Store timeLeft in localStorage
                 localStorage.setItem('timeLeft', timeLeft);
 
                 timerElement.innerHTML = formatTime(timeLeft);
 
-                // Increment totalWorkMinutes when a full minute has passed
-                if (elapsedSecondsTotal >= 60 && isWorkSession) {
-                    totalWorkMinutes++;
-                    localStorage.setItem('totalWorkMinutes', totalWorkMinutes);
-                    elapsedSecondsTotal -= 60; // Subtract 60 from the total elapsed seconds
-                }
-
                 if (timeLeft <= 0) {
                     clearInterval(countdown);
                     showAlert('Well done :)');
-                    audio.play();
+                    new Audio('water-drop.mp3').play();
                     totalWorkMinutes += 25;
-                    timeLeft = 25 * 60; // reset timer
+                    timeLeft = 25 * 60;
                     timerElement.innerHTML = formatTime(timeLeft);
-                    countdown = null; // Clear the interval ID when the timer resets
-                    startButton.innerHTML = '<i class="fa-solid fa-play"></i>'; // Change button text back to 'Start'
-                    localStorage.removeItem('timeLeft'); // Remove timeLeft from localStorage
+                    countdown = null;
+                    startButton.innerHTML = '<i class="fa-solid fa-play"></i>';
+                    localStorage.removeItem('timeLeft');
                 }
-            }, 1000);
-        }
+            }
 
+            // Function to format time in MM:SS format
+            function formatTime(seconds) {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+            }
 
-        // Attach the event listeners
-        startButton.addEventListener('click', function () {
-            startTimer(startButton, false);
-        });
+            // Function to show the custom alert box
+            function showAlert(message) {
+                document.getElementById('alertMessage').innerText = message;
+                document.getElementById('alertBox').style.display = 'block';
+            }
 
-        resetButton.addEventListener('click', function () {
-            clearInterval(countdown);
-            countdown = null;
-            timeLeft = 25 * 60; // reset timer
-            timerElement.innerHTML = formatTime(timeLeft);
-            startButton.innerHTML = '<i class="fa-solid fa-play"></i>'; // Change button text back to 'Start'
-            localStorage.removeItem('timeLeft'); // Remove timeLeft from localStorage
-            startButton.classList.remove('active');
-            timerElement.classList.remove('active');
-        });
-
-        sendButton.addEventListener('click', function () {
-            // Get the data from localStorage
+            // Event listeners
+            startButton.addEventListener('click', toggleTimer);
+            resetButton.addEventListener('click', function () {
+                clearInterval(countdown);
+                countdown = null;
+                timeLeft = 25 * 60;
+                timerElement.innerHTML = formatTime(timeLeft);
+                startButton.innerHTML = '<i class="fa-solid fa-play"></i>';
+                localStorage.removeItem('timeLeft');
+                startButton.classList.remove('active');
+                timerElement.classList.remove('active');
+            });
+            sendButton.addEventListener('click', function () {
+                 // Get the data from localStorage
             var startDateOnDB = localStorage.getItem('startDateTime');
             var workMinutes = parseInt(localStorage.getItem('totalWorkMinutes'));
             var pauseCount = parseInt(localStorage.getItem('pauseCount'));
@@ -486,7 +434,7 @@
                 'pauseCount': parseInt(pauseCount)
             };
 
-            console.log(data);
+            //console.log(data);
 
             // Send a POST request to your server
             fetch('https://483d8b.pythonanywhere.com/addTime', {
@@ -510,73 +458,43 @@
                 .catch((error) => {
                     console.error('Error Stack:', error.stack);
                 });
-        });
+            });
+            settingsButton.addEventListener('click', function () {
+                settingsPopup.style.display = 'block';
+            });
+            closeSettingsButton.addEventListener('click', function () {
+                settingsPopup.style.display = 'none';
+            });
+            shortBreakButton.addEventListener('click', function () {
+                clearInterval(countdown);
+                timeLeft = shortBreakInput.value * 60;
+                timerElement.innerHTML = formatTime(timeLeft);
+                isWorkSession = false;
+                elapsedSecondsTotal = 0;
+                startButton.innerHTML = '<i class="fa-solid fa-play"></i>';
+                startButton.classList.remove('active');
+                timerElement.classList.remove('active');
+                startDate = new Date();
+                isPaused = true;
+                currentBreakType = 'short';
+            });
+            longBreakButton.addEventListener('click', function () {
+                clearInterval(countdown);
+                timeLeft = longBreakInput.value * 60;
+                timerElement.innerHTML = formatTime(timeLeft);
+                isWorkSession = false;
+                elapsedSecondsTotal = 0;
+                startButton.innerHTML = '<i class="fa-solid fa-play"></i>';
+                startButton.classList.remove('active');
+                timerElement.classList.remove('active');
+                startDate = new Date();
+                isPaused = true;
+                currentBreakType = 'long';
+            });
 
-        settings.addEventListener('click', function () {
-            document.querySelector('#settings-popup').style.display = 'block';
-        });
-
-        closeSettingsBtn.addEventListener('click', function () {
-            document.querySelector('#settings-popup').style.display = 'none';
-        });
-
-
-        function formatTime(seconds) {
-            var minutes = Math.floor(seconds / 60);
-            var seconds = seconds % 60;
-            return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
-        }
-
-
-        // Function to show the custom alert box
-        function showAlert(message) {
-            document.getElementById('alertMessage').innerText = message;
-            alertBox.style.display = 'block';
-        }
-
-
-        pomodoroButton.addEventListener('click', function () {
-            clearInterval(countdown);
-            timeLeft = sessionInput.value * 60;
-            timerElement.innerHTML = formatTime(timeLeft);
-            isWorkSession = true;
-            startButton.innerHTML = '<i class="fa-solid fa-play"></i>';
-            startButton.classList.remove('active');
-            timerElement.classList.remove('active');
-            startDate = new Date();
-            isPaused = true;
-        });
-
-        shortBreakButton.addEventListener('click', function () {
-            clearInterval(countdown);
-            timeLeft = shortBreakInput.value * 60;
-            timerElement.innerHTML = formatTime(timeLeft);
-            isWorkSession = false;
-            elapsedSecondsTotal = 0;
-            startButton.innerHTML = '<i class="fa-solid fa-play"></i>';
-            startButton.classList.remove('active');
-            timerElement.classList.remove('active');
-            startDate = new Date();
-            isPaused = true;
-            currentBreakType = 'short';
-        });
-
-        longBreakButton.addEventListener('click', function () {
-            clearInterval(countdown);
-            timeLeft = longBreakInput.value * 60;
-            timerElement.innerHTML = formatTime(timeLeft);
-            isWorkSession = false;
-            elapsedSecondsTotal = 0;
-            startButton.innerHTML = '<i class="fa-solid fa-play"></i>';
-            startButton.classList.remove('active');
-            timerElement.classList.remove('active');
-            startDate = new Date();
-            isPaused = true;
-            currentBreakType = 'long';
-        });
-
-        document.getElementById('save').addEventListener('click', function () {
-            var sessionMinutes = document.getElementById('session-minutes').value;
+            // Function to save settings
+            document.getElementById('save').addEventListener('click', function () {
+                var sessionMinutes = document.getElementById('session-minutes').value;
             var shortBreakMinutes = document.getElementById('shortBreak-minutes').value;
             var longBreakMinutes = document.getElementById('longBreak-minutes').value;
 
@@ -598,11 +516,11 @@
                 this.textContent = "Save";
                 document.querySelector('#settings-popup').style.display = 'none';
             }, 1000);
-        });
+            });
 
-
-        document.getElementById('reset-all').addEventListener('click', function () {
-            localStorage.removeItem('timeLeft');
+            // Function to reset all settings
+            document.getElementById('reset-all').addEventListener('click', function () {
+                localStorage.removeItem('timeLeft');
             localStorage.removeItem('totalWorkMinutes');
             localStorage.removeItem('pauseCount');
             localStorage.removeItem('startDateTime');
@@ -615,21 +533,20 @@
             // Check the current session type and set timeLeft accordingly
             if (isWorkSession) {
                 timeLeft = sessionInput.value * 60;
-                timerElement.innerHTML = formatTime(timeLeft);
             } else {
                 // Check if it's a short break or a long break
                 timeLeft = (currentBreakType === 'short') ? shortBreakInput.value * 60 : longBreakInput.value * 60;
-                timerElement.innerHTML = formatTime(timeLeft);
             }
 
-            
+            timerElement.innerHTML = formatTime(timeLeft);
 
             this.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
             setTimeout(() => {
                 this.textContent = "Reset all";
-                document.querySelector('#settings-popup').style.display = 'none';
             }, 1000);
+            });
         });
+
 
 
     </script>
