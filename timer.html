@@ -177,26 +177,19 @@
         var isPaused = false; // Declare a variable to check if the timer is paused
         var pauseCounter = 0;
         var startDate = 0
+        var elapsedSecondsTotal = 0; // Add this line at the beginning of your script
 
-        // Get the alert box
+        var startButton = document.getElementById('start');
+        var resetButton = document.getElementById('reset');
+        var sendButton = document.getElementById('send');
         var alertBox = document.getElementById('alertBox');
-
-        // Get the <span> element that closes the alert box
         var span = document.getElementById('close');
+        var audio = new Audio('water-drop.mp3'); // replace with the URL of your sound file
 
         // When the user clicks on <span> (x), close the alert box
         span.onclick = function () {
             alertBox.style.display = 'none';
         }
-
-        // Function to show the custom alert box
-        function showAlert(message) {
-            document.getElementById('alertMessage').innerText = message;
-            alertBox.style.display = 'block';
-        }
-
-        // Create a new Audio object
-        var audio = new Audio('water-drop.mp3'); // replace with the URL of your sound file
 
         var totalWorkMinutes = localStorage.getItem('totalWorkMinutes') ? parseInt(localStorage.getItem('totalWorkMinutes')) : 0;
 
@@ -209,14 +202,17 @@
         function startTimer() {
             this.classList.remove('active');
             timerElement.classList.remove('active');
-            var now = new Date();
-            var startDate = now.getFullYear() + '-' +
-                ('0' + (now.getMonth() + 1)).slice(-2) + '-' +
-                ('0' + now.getDate()).slice(-2) + ' ' +
-                ('0' + now.getHours()).slice(-2) + ':' +
-                ('0' + now.getMinutes()).slice(-2) + ':' +
-                ('0' + now.getSeconds()).slice(-2);
-            localStorage.setItem('startDateTime', startDate);
+            var startDate = new Date();
+
+            var startDateOnDB = startDate.getFullYear() + '-' +
+                ('0' + (startDate.getMonth() + 1)).slice(-2) + '-' +
+                ('0' + startDate.getDate()).slice(-2) + ' ' +
+                ('0' + startDate.getHours()).slice(-2) + ':' +
+                ('0' + startDate.getMinutes()).slice(-2) + ':' +
+                ('0' + startDate.getSeconds()).slice(-2);
+
+
+            localStorage.setItem('startDateTime', startDateOnDB);
             // Check if countdown is already set
             if (countdown && !isPaused) {
                 this.classList.toggle('active');
@@ -234,23 +230,27 @@
             isPaused = false;
 
             countdown = setInterval(function () {
-                timeLeft--;
+                var now = new Date();
+                var elapsedSeconds = Math.floor((now - startDate) / 1000);
+                elapsedSecondsTotal += elapsedSeconds;
+                timeLeft = timeLeft - elapsedSeconds;
+                startDate = now;
 
                 // Store timeLeft in localStorage
                 localStorage.setItem('timeLeft', timeLeft);
 
                 timerElement.innerHTML = formatTime(timeLeft);
 
-
-                // Update totalWorkMinutes every minute
-                if (timeLeft % 60 === 0) {
+                // Increment totalWorkMinutes when a full minute has passed
+                if (elapsedSecondsTotal >= 60) {
                     totalWorkMinutes++;
                     localStorage.setItem('totalWorkMinutes', totalWorkMinutes);
+                    elapsedSecondsTotal -= 60; // Subtract 60 from the total elapsed seconds
                 }
 
                 if (timeLeft <= 0) {
                     clearInterval(countdown);
-                    showAlert('Time for a break!');
+                    showAlert('Well done');
                     audio.play();
                     totalWorkMinutes += 25;
                     timeLeft = 25 * 60; // reset timer
@@ -262,16 +262,6 @@
             }, 1000);
         }
 
-        function formatTime(seconds) {
-            var minutes = Math.floor(seconds / 60);
-            var seconds = seconds % 60;
-            return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
-        }
-
-        // Get the button elements
-        var startButton = document.getElementById('start');
-        var resetButton = document.getElementById('reset');
-        var sendButton = document.getElementById('send');
 
         // Attach the event listeners
         startButton.addEventListener('click', startTimer);
@@ -287,13 +277,13 @@
 
         sendButton.addEventListener('click', function () {
             // Get the data from localStorage
-            var startDateTime = localStorage.getItem('startDateTime');
+            var startDateOnDB = localStorage.getItem('startDateTime');
             var workMinutes = parseInt(localStorage.getItem('totalWorkMinutes'));
             var pauseCount = parseInt(localStorage.getItem('pauseCount'));
 
             // Create an object with the data
             var data = {
-                'startDateTime': startDateTime,
+                'startDateTime': startDateOnDB,
                 'workMinutes': workMinutes,
                 'pauseCount': pauseCount
             };
@@ -312,7 +302,7 @@
                         console.log('Data successfully sent to the server!');
                         localStorage.removeItem('totalWorkMinutes');
                         localStorage.removeItem('pauseCount');
-                        localStorage.removeItem('startDateTime');
+                        localStorage.removeItem('startDateOnDB');
                     } else {
                         console.log('An error occurred: ' + data.message);
                     }
@@ -321,6 +311,22 @@
                     console.error('Error Stack:', error.stack);
                 });
         });
+
+
+        
+
+        function formatTime(seconds) {
+            var minutes = Math.floor(seconds / 60);
+            var seconds = seconds % 60;
+            return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+        }
+        
+
+        // Function to show the custom alert box
+        function showAlert(message) {
+            document.getElementById('alertMessage').innerText = message;
+            alertBox.style.display = 'block';
+        }
 
 
 
