@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css
+    ">
+    <title>Timer</title>
+    <style>
+        /* CSS Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=UnifrakturCook:wght@700&display=swap');
+
+        html {
+            background-image: url(OIG4.jpg);
+            background-repeat: space;
+            -webkit-background-size: cover;
+            -moz-background-size: cover;
+            -o-background-size: cover;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: nowrap;
+            height: 100vh;
+        }
+
+        #timer {
+            padding: 0.2em;
+            display: block;
+            border: 3px solid black;
+            font-size: 5em;
+            user-select: none;
+            background-color: rgba(255, 255, 255, 70%);
+            border-radius: 7%;
+        }
+
+        #start {
+            margin-top: 0.5em;
+            padding: 0.2em;
+            display: block;
+            border: 3px solid black;
+            font-size: 2em;
+            border-radius: 7%;
+            line-height: 0.9em;
+        }
+
+
+        .active {
+            background-color: rgba(255, 148, 112, 80%) !important;
+        }
+
+        #gif {
+            display: block;
+            border: 2px solid black;
+            margin-top: 2vh;
+        }
+
+        #reset {
+            display: inline-block;
+            position: absolute;
+            top: 0;
+            right: 0;
+            border: 3px solid black;
+            font-size: 2em;
+            height: fit-content;
+            margin-top: 1vh;
+            margin-right: 1vh;
+            border-radius: 30%;
+            line-height: 0.9em;
+            padding: 0.1em;
+            background-color: rgba(255, 255, 255, 80%);
+        }
+
+        #reset:active {
+            background-color: rgba(255, 99, 71, 80%);
+        }
+
+        #buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2em;
+        }
+
+        #send {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            margin: 1vh;
+            padding: 0.2em;
+            display: block;
+            border: 3px solid black;
+            font-size: 1em;
+            border-radius: 7%;
+            background-color: rgba(255, 255, 255, 80%);
+        }
+
+        #alertBox {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        #alertBox div {
+            background-color: #fefefe;
+            margin: 20% auto;
+            padding: 2em;
+            border: 2px solid black;
+            width: 80%;
+            height: 50vh;
+        }
+
+        #close {
+            color: black;
+            float: right;
+            font-size: 2em;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #alertMessage {
+            font-size: 3em;
+            font-weight: 600;
+            text-align: center;
+            transform: translateY(50%);
+        }
+
+        .roboto-regular {
+            font-family: "Roboto", sans-serif;
+            font-weight: 400;
+            font-style: normal;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <button id="reset"><i class="fa-solid fa-rotate-left"></i></button>
+        <div id="timer" class="roboto-regular">25:00</div>
+        <div id="buttons">
+            <button id="start"><i class="fa-solid fa-play"></i></button>
+        </div>
+        <button id="send"><i class="fa-solid fa-database"></i></button>
+    </div>
+
+
+    <div id="alertBox">
+        <div>
+            <span id="close">&times;</span>
+            <p id="alertMessage"></p>
+        </div>
+    </div>
+
+    <script>
+        var timerElement = document.getElementById('timer');
+        var countdown; // Declare countdown variable outside the function
+        var isPaused = false; // Declare a variable to check if the timer is paused
+        var pauseCounter = 0;
+        var startDate = 0
+
+        // Get the alert box
+        var alertBox = document.getElementById('alertBox');
+
+        // Get the <span> element that closes the alert box
+        var span = document.getElementById('close');
+
+        // When the user clicks on <span> (x), close the alert box
+        span.onclick = function () {
+            alertBox.style.display = 'none';
+        }
+
+        // Function to show the custom alert box
+        function showAlert(message) {
+            document.getElementById('alertMessage').innerText = message;
+            alertBox.style.display = 'block';
+        }
+
+        // Create a new Audio object
+        var audio = new Audio('water-drop.mp3'); // replace with the URL of your sound file
+
+        var totalWorkMinutes = localStorage.getItem('totalWorkMinutes') ? parseInt(localStorage.getItem('totalWorkMinutes')) : 0;
+
+        // Retrieve timeLeft from localStorage or set to 25 * 60 if not found
+        var timeLeft = localStorage.getItem('timeLeft') ? parseInt(localStorage.getItem('timeLeft')) : 25 * 60;
+
+        // Update timer display on page load
+        timerElement.innerHTML = formatTime(timeLeft);
+
+        function startTimer() {
+            this.classList.remove('active');
+            timerElement.classList.remove('active');
+            var now = new Date();
+            var startDate = now.getFullYear() + '-' +
+                ('0' + (now.getMonth() + 1)).slice(-2) + '-' +
+                ('0' + now.getDate()).slice(-2) + ' ' +
+                ('0' + now.getHours()).slice(-2) + ':' +
+                ('0' + now.getMinutes()).slice(-2) + ':' +
+                ('0' + now.getSeconds()).slice(-2);
+            localStorage.setItem('startDateTime', startDate);
+            // Check if countdown is already set
+            if (countdown && !isPaused) {
+                this.classList.toggle('active');
+                timerElement.classList.toggle('active');
+                clearInterval(countdown); // Pause the timer
+                countdown = null;
+                isPaused = true;
+                pauseCounter++;
+                this.innerHTML = '<i class="fa-solid fa-play"></i>'; // Change button text to 'Resume'
+                localStorage.setItem('pauseCount', pauseCounter);
+                return;
+            }
+
+            this.innerHTML = '<i class="fa-solid fa-pause"></i>'; // Change button text to 'Pause'
+            isPaused = false;
+
+            countdown = setInterval(function () {
+                timeLeft--;
+
+                // Store timeLeft in localStorage
+                localStorage.setItem('timeLeft', timeLeft);
+
+                timerElement.innerHTML = formatTime(timeLeft);
+
+
+                // Update totalWorkMinutes every minute
+                if (timeLeft % 60 === 0) {
+                    totalWorkMinutes++;
+                    localStorage.setItem('totalWorkMinutes', totalWorkMinutes);
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    showAlert('Time for a break!');
+                    audio.play();
+                    totalWorkMinutes += 25;
+                    timeLeft = 25 * 60; // reset timer
+                    timerElement.innerHTML = formatTime(timeLeft);
+                    countdown = null; // Clear the interval ID when the timer resets
+                    startButton.innerHTML = 'Start'; // Change button text back to 'Start'
+                    localStorage.removeItem('timeLeft'); // Remove timeLeft from localStorage
+                }
+            }, 1000);
+        }
+
+        function formatTime(seconds) {
+            var minutes = Math.floor(seconds / 60);
+            var seconds = seconds % 60;
+            return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+        }
+
+        // Get the button elements
+        var startButton = document.getElementById('start');
+        var resetButton = document.getElementById('reset');
+        var sendButton = document.getElementById('send');
+
+        // Attach the event listeners
+        startButton.addEventListener('click', startTimer);
+
+        resetButton.addEventListener('click', function () {
+            clearInterval(countdown);
+            countdown = null;
+            timeLeft = 25 * 60; // reset timer
+            timerElement.innerHTML = formatTime(timeLeft);
+            startButton.innerHTML = 'Start'; // Change button text back to 'Start'
+            localStorage.removeItem('timeLeft'); // Remove timeLeft from localStorage
+        });
+
+        sendButton.addEventListener('click', function () {
+            // Get the data from localStorage
+            var startDateTime = localStorage.getItem('startDateTime');
+            var workMinutes = parseInt(localStorage.getItem('totalWorkMinutes'));
+            var pauseCount = parseInt(localStorage.getItem('pauseCount'));
+
+            // Create an object with the data
+            var data = {
+                'startDateTime': startDateTime,
+                'workMinutes': workMinutes,
+                'pauseCount': pauseCount
+            };
+
+            // Send a POST request to your server
+            fetch('https://483d8b.pythonanywhere.com/addTime', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success :)') {
+                        console.log('Data successfully sent to the server!');
+                        localStorage.removeItem('totalWorkMinutes');
+                        localStorage.removeItem('pauseCount');
+                        localStorage.removeItem('startDateTime');
+                    } else {
+                        console.log('An error occurred: ' + data.message);
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error Stack:', error.stack);
+                });
+        });
+
+
+
+    </script>
+
+</body>
+
+</html>
