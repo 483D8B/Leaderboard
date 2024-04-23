@@ -263,6 +263,11 @@
         #save {
             float: right;
         }
+
+        .active-session-button {
+            background-color: #4CAF50;
+            color: white;
+        }
     </style>
 </head>
 
@@ -361,7 +366,7 @@
             alertBox.style.display = 'none';
         }
 
-        var totalWorkMinutes = localStorage.getItem('totalWorkMinutes') ? parseInt(localStorage.getItem('totalWorkMinutes')) : 0;
+        var totalWorkMinutes = parseInt(localStorage.getItem('totalWorkMinutes')) || 0;
 
         // Retrieve timeLeft from localStorage or set to sessionMinutes * 60 if not found
         var timeLeft = localStorage.getItem('timeLeft') ? parseInt(localStorage.getItem('timeLeft')) : localStorage.getItem('sessionMinutes') * 60;
@@ -432,19 +437,29 @@
 
                 timerElement.innerHTML = formatTime(timeLeft);
 
-                // Increment totalWorkMinutes when a full minute has passed
-                if (elapsedSecondsTotal >= 60 && isWorkSession) {
-                    totalWorkMinutes++;
-                    localStorage.setItem('totalWorkMinutes', totalWorkMinutes);
-                    elapsedSecondsTotal -= 60; // Subtract 60 from the total elapsed seconds
+                if (isWorkSession) {
+                    var minutesElapsed = Math.floor(elapsedSecondsTotal / 60);
+                    if (minutesElapsed > totalWorkMinutes) {
+                        totalWorkMinutes = minutesElapsed;
+                        localStorage.setItem('totalWorkMinutes', totalWorkMinutes);
+                    }
+                    elapsedSecondsTotal %= 60;
                 }
+
+
 
                 if (timeLeft <= 0) {
                     clearInterval(countdown);
                     showAlert('Well done :)');
                     audio.play();
-                    totalWorkMinutes += 25;
-                    timeLeft = 25 * 60; // reset timer
+                    if (isWorkSession) {
+                        totalWorkMinutes += Math.floor((startDate.getTime() - new Date(localStorage.getItem('startDateTime')).getTime()) / (1000 * 60));
+                    }
+                    if (currentBreakType === 'short') {
+                        timeLeft = shortBreakInput.value * 60;
+                    } else {
+                        timeLeft = longBreakInput.value * 60;
+                    }
                     timerElement.innerHTML = formatTime(timeLeft);
                     countdown = null; // Clear the interval ID when the timer resets
                     startButton.innerHTML = '<i class="fa-solid fa-play"></i>'; // Change button text back to 'Start'
@@ -462,7 +477,13 @@
         resetButton.addEventListener('click', function () {
             clearInterval(countdown);
             countdown = null;
-            timeLeft = 25 * 60; // reset timer
+            if (isWorkSession) {
+                timeLeft = sessionInput.value * 60;
+            } else if (currentBreakType === 'short') {
+                timeLeft = shortBreakInput.value * 60;
+            } else {
+                timeLeft = longBreakInput.value * 60;
+            }
             timerElement.innerHTML = formatTime(timeLeft);
             startButton.innerHTML = '<i class="fa-solid fa-play"></i>'; // Change button text back to 'Start'
             localStorage.removeItem('timeLeft'); // Remove timeLeft from localStorage
@@ -545,6 +566,7 @@
             timerElement.classList.remove('active');
             startDate = new Date();
             isPaused = true;
+            highlightActiveButton(this);
         });
 
         shortBreakButton.addEventListener('click', function () {
@@ -559,6 +581,7 @@
             startDate = new Date();
             isPaused = true;
             currentBreakType = 'short';
+            highlightActiveButton(this);
         });
 
         longBreakButton.addEventListener('click', function () {
@@ -573,6 +596,7 @@
             startDate = new Date();
             isPaused = true;
             currentBreakType = 'long';
+            highlightActiveButton(this);
         });
 
         document.getElementById('save').addEventListener('click', function () {
@@ -622,7 +646,7 @@
                 timerElement.innerHTML = formatTime(timeLeft);
             }
 
-            
+
 
             this.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
             setTimeout(() => {
@@ -631,6 +655,16 @@
             }, 1000);
         });
 
+
+        function highlightActiveButton(button) {
+            // Remove the active class from all session buttons
+            pomodoroButton.classList.remove('active-session-button');
+            shortBreakButton.classList.remove('active-session-button');
+            longBreakButton.classList.remove('active-session-button');
+
+            // Add the active class to the specified button
+            button.classList.add('active-session-button');
+        }
 
     </script>
 
