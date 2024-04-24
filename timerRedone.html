@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css
+    ">
+    <title>Timer</title>
+    <style>
+        /* CSS Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap');
+
+        html {
+            background-image: url(OIG4.jpg);
+            background-repeat: space;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #timer {
+            padding: 0.2em;
+            border: 3px solid black;
+            font-size: 5em;
+            user-select: none;
+            background-color: rgba(255, 255, 255, 70%);
+            border-radius: 0.2em;
+        }
+
+        #start {
+            margin-top: 0.5em;
+            border: 3px solid black;
+            font-size: 2em;
+            width: 2em;
+        }
+
+        .active {
+            background-color: rgba(255, 148, 112, 80%) !important;
+        }
+
+        #gif {
+            display: block;
+            border: 2px solid black;
+            margin-top: 2vh;
+        }
+
+        #reset {
+            display: inline-block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            border: 3px solid black;
+            font-size: 2em;
+            height: fit-content;
+            margin-top: 1vh;
+            margin-left: 1vh;
+            border-radius: 30%;
+            line-height: 0.9em;
+            padding: 0.1em;
+        }
+
+        #reset:active {
+            background-color: rgba(255, 99, 71, 80%);
+        }
+
+        #buttons,
+        #top-buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2em;
+        }
+
+        #send {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            margin: 1vh;
+            padding: 0.5em;
+            display: block;
+            border: 3px solid black;
+            font-size: 1em;
+            border-radius: 0.5em;
+        }
+
+        #alertBox {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        #alertBox div {
+            background-color: #fefefe;
+            margin: 20% auto;
+            padding: 2em;
+            border: 2px solid black;
+            width: 80%;
+            height: 50vh;
+        }
+
+        #close {
+            color: black;
+            float: right;
+            font-size: 2em;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #alertMessage {
+            font-size: 3em;
+            font-weight: 600;
+            text-align: center;
+            transform: translateY(50%);
+        }
+
+        .roboto-regular {
+            font-family: "Roboto", sans-serif;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        .top-button,
+        .button {
+            border: 3px solid black;
+            border-radius: 0.5em;
+            background-color: rgba(255, 255, 255, 80%);
+        }
+
+        .top-button {
+            font-size: 1em;
+            height: 2em;
+            width: 6em;
+            margin-bottom: 1em;
+        }
+
+        .button {
+            border-radius: 0.2em;
+        }
+
+        #settings {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            font-size: 2em;
+            font-weight: 900;
+            background-color: transparent;
+            cursor: pointer;
+            text-align: center;
+            border: 0px solid transparent;
+        }
+
+        #settings svg {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 1.5em;
+            width: auto;
+            margin-top: 0.2em;
+            margin-right: 0.2em;
+            background-color: rgba(255, 255, 255, 40%);
+            border: 3px solid black;
+            border-radius: 50%;
+        }
+
+        .settings-popup {
+            position: fixed;
+            width: 80vw;
+            height: 60vh;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 2em;
+            padding: 2%;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 2px;
+            border: 2px solid black;
+            display: none;
+            opacity: 0.98;
+            font-family: Verdana, sans-serif;
+            flex-direction: column;
+            align-items: center;
+            overflow-y: auto;
+            z-index: 90;
+        }
+
+        .settings-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2em;
+            user-select: none;
+        }
+
+        .settings-item label {
+            margin-bottom: 0.2em;
+        }
+
+        .settings-item input {
+            margin-bottom: 5px;
+        }
+
+        .top-label {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .bottom-label {
+            font-size: 0.8em;
+        }
+
+        #close-settings-btn {
+            position: sticky;
+            top: 0;
+            left: 97%;
+            height: auto;
+            width: auto;
+            font-size: 200%;
+            cursor: pointer;
+            font-weight: 900;
+            background-color: transparent;
+            border: 1px solid transparent;
+        }
+
+        #reset-all {
+            color: red;
+            border: 3px solid red;
+        }
+
+        #save {
+            float: right;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <button id="reset" class="button"><i class="fa-solid fa-rotate-left"></i></button>
+        <div id="top-buttons">
+            <button id="pomodoro" class="top-button">pomodoro</button>
+            <button id="shortBreak" class="top-button">short break</button>
+            <button id="longBreak" class="top-button">long break</button>
+        </div>
+        <div id="timer" class="timer roboto-regular">25:00</div>
+        <div id="buttons">
+            <button id="start" class="button"><i class="fa-solid fa-play"></i></button>
+        </div>
+        <button id="send" class="button"><i class="fa-solid fa-database"></i></button>
+    </div>
+
+    <div id="settings">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M14 21h-4l-.551-2.48a6.991 6.991 0 0 1-1.819-1.05l-2.424.763-2-3.464 1.872-1.718a7.055 7.055 0 0 1 0-2.1L3.206 9.232l2-3.464 2.424.763A6.992 6.992 0 0 1 9.45 5.48L10 3h4l.551 2.48a6.992 6.992 0 0 1 1.819 1.05l2.424-.763 2 3.464-1.872 1.718a7.05 7.05 0 0 1 0 2.1l1.872 1.718-2 3.464-2.424-.763a6.99 6.99 0 0 1-1.819 1.052L14 21z" />
+            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
+        </svg>
+    </div>
+    <div id="settings-popup" class="settings-popup">
+        <button id="close-settings-btn">x</button>
+
+        <div class="settings-item">
+            <label for="pomodoro-minutes" class="top-label">Pomodoro</label>
+            <input type="text" id="pomodoro-minutes" name="minutes">
+            <label for="pomodoro-minutes" class="bottom-label">minutes</label>
+        </div>
+
+        <div class="settings-item">
+            <label for="shortBreak-minutes" class="top-label">Short break</label>
+            <input type="text" id="shortBreak-minutes" name="minutes">
+            <label for="shortBreak-minutes" class="bottom-label">minutes</label>
+        </div>
+
+        <div class="settings-item">
+            <label for="longBreak-minutes" class="top-label">Long break</label>
+            <input type="text" id="longBreak-minutes" name="minutes">
+            <label for="longBreak-minutes" class="bottom-label">minutes</label>
+        </div>
+
+        <button id="reset-all" class="top-button">Reset all</button>
+        <button id="save" class="top-button">Save</button>
+
+
+    </div>
+
+    <div id="alertBox">
+        <div>
+            <span id="close">&times;</span>
+            <p id="alertMessage"></p>
+        </div>
+    </div>
+
+    <script>
+
+        // Default values
+        let defaultValues = {
+            'pomodoro': 25,
+            'shortBreak': 5,
+            'longBreak': 10
+        };
+
+        // Load user preferences from localStorage
+        let userValues = JSON.parse(localStorage.getItem('userValues')) || defaultValues;
+
+        // Keep track of the current mode
+        let currentMode = 'pomodoro';
+
+
+        // Update timer according to the selected mode
+        function updateTimer(mode) {
+            currentMode = mode;
+            let minutes = userValues[mode];
+            document.getElementById('timer').textContent = `${minutes}:00`;
+
+            // Remove 'active' class from all buttons
+            let buttons = document.querySelectorAll('.top-button');
+            buttons.forEach((button) => {
+                button.classList.remove('active');
+            });
+
+            // Add 'active' class to the current mode button
+            document.getElementById(mode).classList.add('active');
+        }
+
+
+        // Save user preferences to localStorage
+        function saveValues() {
+            userValues['pomodoro'] = document.getElementById('pomodoro-minutes').value;
+            userValues['shortBreak'] = document.getElementById('shortBreak-minutes').value;
+            userValues['longBreak'] = document.getElementById('longBreak-minutes').value;
+            localStorage.setItem('userValues', JSON.stringify(userValues));
+            // Update the timer display immediately after saving
+            updateTimer(currentMode);
+            this.innerHTML = 'saved :)';
+            setTimeout(() => {
+                this.textContent = "Save";
+                document.getElementById('settings-popup').style.display = 'none';
+            }, 500);
+        }
+
+        // Reset user preferences to default values
+        function resetValues() {
+            userValues = defaultValues;
+            // Reset input fields to default values
+            document.getElementById('pomodoro-minutes').value = defaultValues['pomodoro'];
+            document.getElementById('shortBreak-minutes').value = defaultValues['shortBreak'];
+            document.getElementById('longBreak-minutes').value = defaultValues['longBreak'];
+            updateTimer('pomodoro');
+            this.innerHTML = '<i class="fa-solid fa-trash-can"></i>...';
+        
+            setTimeout(() => {
+                this.textContent = "Reset all";
+                document.getElementById('settings-popup').style.display = 'none';
+            }, 500);
+            localStorage.removeItem('userValues');
+        }
+
+        // Event listeners for mode buttons
+        document.getElementById('pomodoro').addEventListener('click', () => updateTimer('pomodoro'));
+        document.getElementById('shortBreak').addEventListener('click', () => updateTimer('shortBreak'));
+        document.getElementById('longBreak').addEventListener('click', () => updateTimer('longBreak'));
+
+        // Event listener for save button
+        document.getElementById('save').addEventListener('click', saveValues);
+
+        // Event listener for reset button
+        document.getElementById('reset-all').addEventListener('click', resetValues);
+
+        // Initialize timer with user's preferred mode
+        updateTimer('pomodoro');
+
+
+        settings.addEventListener('click', function () {
+            document.getElementById('settings-popup').style.display = 'block';
+        });
+
+        document.getElementById('close-settings-btn').addEventListener('click', function () {
+            document.getElementById('settings-popup').style.display = 'none';
+        });
+
+        document.addEventListener("DOMContentLoaded", (event) => {
+            document.getElementById('pomodoro-minutes').value = userValues['pomodoro'];
+            document.getElementById('shortBreak-minutes').value = userValues['shortBreak'];
+            document.getElementById('longBreak-minutes').value = userValues['longBreak'];
+
+
+        });
+
+    </script>
+
+</body>
+
+</html>
