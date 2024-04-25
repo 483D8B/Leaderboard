@@ -60,7 +60,7 @@
             margin-top: 2vh;
         }
 
-        #reset {
+        #restart {
             display: inline-block;
             position: absolute;
             top: 0;
@@ -75,7 +75,7 @@
             padding: 0.1em;
         }
 
-        #reset:active {
+        #restart:active {
             background-color: rgba(255, 99, 71, 80%);
         }
 
@@ -186,8 +186,8 @@
 
         .settings-popup {
             position: fixed;
-            width: 80vw;
-            height: 60vh;
+            width: auto;
+            height: auto;
             top: 0;
             left: 50%;
             transform: translateX(-50%);
@@ -247,6 +247,7 @@
         #reset-all {
             color: red;
             border: 3px solid red;
+            margin-right: 2em;
         }
 
         #save {
@@ -258,7 +259,7 @@
 <body>
 
     <div class="container">
-        <button id="reset" class="button"><i class="fa-solid fa-rotate-left"></i></button>
+        <button id="restart" class="button"><i class="fa-solid fa-rotate-left"></i></button>
         <div id="top-buttons">
             <button id="pomodoro" class="top-button">pomodoro</button>
             <button id="shortBreak" class="top-button">short break</button>
@@ -324,8 +325,7 @@
         // Load user preferences from localStorage
         let userValues = JSON.parse(localStorage.getItem('userValues')) || defaultValues;
 
-        // Keep track of the current mode
-        let currentMode = 'pomodoro';
+
 
         //TIMER LOGIC
 
@@ -334,26 +334,25 @@
         let countdown;
         let timeLeft;
         let isPaused = false;
+        let currentMode = localStorage.getItem('currentMode') || 'pomodoro';
 
 
         document.addEventListener("DOMContentLoaded", (event) => {
             document.getElementById('pomodoro-minutes').value = userValues['pomodoro'];
             document.getElementById('shortBreak-minutes').value = userValues['shortBreak'];
             document.getElementById('longBreak-minutes').value = userValues['longBreak'];
-
-            // Load currentMode from localStorage
             currentMode = localStorage.getItem('currentMode') || 'pomodoro';
-
             let savedMode = localStorage.getItem('currentMode');
             let savedTimeLeft = Number(localStorage.getItem('timeLeft'));
 
-            if (savedMode === currentMode) {
-                // If the saved mode matches the current mode, load the saved timeLeft
+            if (savedMode === currentMode && !isNaN(savedTimeLeft)) {
+                // If the saved mode matches the current mode and savedTimeLeft is a number, load the saved timeLeft
                 timeLeft = savedTimeLeft;
             } else {
-                // If the saved mode doesn't match the current mode, reset the timer
+                // If the saved mode doesn't match the current mode or savedTimeLeft is NaN, reset the timer
                 timeLeft = userValues[currentMode] * 60;
             }
+
 
             // Calculate minutes and seconds from timeLeft
             let min = Math.floor(timeLeft / 60);
@@ -379,6 +378,7 @@
 
         // Start timer
         function startTimer(button) {
+
             // Get the current time
             let startTime = new Date().getTime();
 
@@ -422,7 +422,7 @@
                 // Save timeLeft and isPaused to localStorage
                 localStorage.setItem('timeLeft', timeLeft);
                 localStorage.setItem('isPaused', isPaused);
-            }, 1000); // 1000ms = 1s
+            }, 1000);
 
             // Set isPaused to false
             isPaused = false;
@@ -466,25 +466,18 @@
 
         //END TIMER LOGIC
 
-
-
-
         // Update timer according to the selected mode
         function updateTimer(mode) {
 
-            // If the mode has been changed, update timeLeft to the new mode's time
-            let minutes = userValues[mode];
             if (currentMode !== mode) {
-
+                let minutes = userValues[mode];
                 timeLeft = minutes * 60;
                 // Reset the saved timeLeft in localStorage
                 localStorage.setItem('timeLeft', timeLeft);
+                document.getElementById('timer').textContent = `${minutes}:00`;
             }
 
             currentMode = mode;
-            document.getElementById('timer').textContent = `${minutes}:00`;
-
-            // Update timeLeft to the new mode's time
 
 
             // Remove 'active' class from all buttons
@@ -508,6 +501,16 @@
             localStorage.setItem('userValues', JSON.stringify(userValues));
             // Update the timer display immediately after saving
             updateTimer(currentMode);
+
+            // If the current mode is the one being updated, update timeLeft and the timer display
+            if (currentMode === 'pomodoro' || currentMode === 'shortBreak' || currentMode === 'longBreak') {
+                timeLeft = userValues[currentMode] * 60;
+                let minutes = Math.floor(timeLeft / 60);
+                let seconds = timeLeft % 60;
+                seconds = seconds < 10 ? '0' + seconds : seconds;
+                document.getElementById('timer').textContent = `${minutes}:${seconds}`;
+            }
+
             this.innerHTML = 'saved :)';
             setTimeout(() => {
                 this.textContent = "Save";
@@ -515,18 +518,62 @@
             }, 500);
         }
 
+
+        // Restart the timer
+        function restartTimer() {
+            // Reset timeLeft to the default value for the current mode
+            timeLeft = userValues[currentMode] * 60;
+            // Reset the saved timeLeft in localStorage
+            localStorage.setItem('timeLeft', timeLeft);
+
+            // Update the timer display
+            let minutes = Math.floor(timeLeft / 60);
+            let seconds = timeLeft % 60;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            document.getElementById('timer').textContent = `${minutes}:${seconds}`;
+
+            // If the timer is running, stop it
+            if (countdown) {
+                clearInterval(countdown);
+                countdown = null;
+            }
+
+            // Update the start button
+            let startButton = document.getElementById('start');
+            startButton.innerHTML = '<i class="fa-solid fa-play"></i>'; // Change button text to 'Start'
+            startButton.classList.remove('active');
+            document.getElementById('timer').classList.remove('active');
+        }
+
+
         // Reset user preferences to default values
         function resetValues() {
-            userValues = defaultValues;
+
+            userValues = Object.assign({}, defaultValues);
+
+            // Update userValues in localStorage
+            localStorage.setItem('userValues', JSON.stringify(userValues))
+
+            // Reset timeLeft to the default value for the current mode
+            timeLeft = userValues[currentMode] * 60;
+            // Reset the saved timeLeft in localStorage
+            localStorage.setItem('timeLeft', timeLeft);
+
+            // Update the timer display
+            let minutes = Math.floor(timeLeft / 60);
+            let seconds = timeLeft % 60;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            document.getElementById('timer').textContent = `${minutes}:${seconds}`;
+            // Remove 'active' class from the start button and the timer
+            document.getElementById('start').classList.remove('active');
+            document.getElementById('timer').classList.remove('active');
+
 
             // Reset input fields to default values
             document.getElementById('pomodoro-minutes').value = defaultValues['pomodoro'];
             document.getElementById('shortBreak-minutes').value = defaultValues['shortBreak'];
             document.getElementById('longBreak-minutes').value = defaultValues['longBreak'];
 
-            // Update userValues in localStorage
-            localStorage.setItem('userValues', JSON.stringify(userValues))
-            updateTimer('pomodoro');
 
             this.innerHTML = '<i class="fa-solid fa-trash-can"></i>...';
 
@@ -547,8 +594,12 @@
         // Event listener for reset button
         document.getElementById('reset-all').addEventListener('click', resetValues);
 
+        // Event listener for restart button
+        document.getElementById('restart').addEventListener('click', restartTimer);
+
+
         // Initialize timer with user's preferred mode
-        updateTimer(localStorage.getItem('currentMode'));
+        updateTimer(currentMode);
 
 
         settings.addEventListener('click', function () {
