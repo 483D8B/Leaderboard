@@ -253,6 +253,14 @@
         #save {
             float: right;
         }
+
+        #password {
+            border: 3px solid #ba5939;
+            padding: 0.3em;
+            border-radius: 2em;
+            color: #ba5939;
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -271,6 +279,8 @@
         </div>
         <button id="send" class="button"><i class="fa-solid fa-database"></i></button>
     </div>
+
+
 
     <div id="settings">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
@@ -299,9 +309,13 @@
             <input type="text" id="longBreak-minutes" name="minutes">
             <label for="longBreak-minutes" class="bottom-label">minutes</label>
         </div>
-
         <button id="reset-all" class="top-button">Reset all</button>
         <button id="save" class="top-button">Save</button>
+
+        <div class="settings-item">
+            <label for="password" class="bottom-label">password</label>
+            <input type="password" id="password">
+        </div>
 
 
     </div>
@@ -331,10 +345,17 @@
 
 
         // Timer variables
-        let countdown;
+        let countdown = null;
         let timeLeft;
         let isPaused = false;
         let currentMode = localStorage.getItem('currentMode') || 'pomodoro';
+
+        let totalPomodoroTime = Number(localStorage.getItem('totalPomodoroTime')) || 0;
+        let pauseCount = Number(localStorage.getItem('pauseCount')) || 0;
+
+        let timerData = JSON.parse(localStorage.getItem('timerData')) || [];
+
+
 
 
         document.addEventListener("DOMContentLoaded", (event) => {
@@ -387,6 +408,23 @@
                 let minutes = userValues[currentMode];
                 timeLeft = minutes * 60;
             }
+            let startTimer = new Date();
+            let tmp = startTimer.getFullYear()+'-'+(startTimer.getMonth()+1)+'-'+startTimer.getDate()+' '+startTimer.getHours()+':'+startTimer.getMinutes()+':'+startTimer.getSeconds();
+            var data = {
+                'startDateTimer': tmp,
+                'totalPomodoroTime': 0,
+                'pauseCount': 0
+            };
+
+            // If the timer is not paused and countdown is undefined (i.e., the timer is starting for the first time), save the start time
+            if (!isPaused && countdown === null) {
+                let startTimer = new Date();
+                let tmp = startTimer.getFullYear()+'-'+(startTimer.getMonth()+1)+'-'+startTimer.getDate()+' '+startTimer.getHours()+':'+startTimer.getMinutes()+':'+startTimer.getSeconds();
+                localStorage.setItem('startTimer', tmp);
+
+                // Push the new object to the timerData array
+                timerData.push(data);
+            }
 
             // Clear any existing interval
             clearInterval(countdown);
@@ -398,6 +436,10 @@
 
                 // Update timeLeft
                 timeLeft -= elapsedTime;
+
+                if (currentMode === 'pomodoro') {
+                    totalPomodoroTime += elapsedTime;
+                }
 
                 // Reset startTime
                 startTime = new Date().getTime();
@@ -422,6 +464,15 @@
                 // Save timeLeft and isPaused to localStorage
                 localStorage.setItem('timeLeft', timeLeft);
                 localStorage.setItem('isPaused', isPaused);
+                localStorage.setItem('totalPomodoroTime', totalPomodoroTime);
+                localStorage.setItem('pauseCount', pauseCount);
+
+                console.log(totalPomodoroTime);
+                let lastTimer = timerData[timerData.length - 1];
+                lastTimer.pauseCount = pauseCount;
+                lastTimer.totalPomodoroTime = Math.floor(totalPomodoroTime / 60);
+                // Save timerData to localStorage
+                localStorage.setItem('timerData', JSON.stringify(timerData));
             }, 1000);
 
             // Set isPaused to false
@@ -443,11 +494,20 @@
             button.innerHTML = '<i class="fa-solid fa-play"></i>'; // Change button text to 'Resume'
             button.classList.add('active');
             document.getElementById('timer').classList.add('active');
+            pauseCount++;
 
 
             // Save timeLeft and isPaused to localStorage
             localStorage.setItem('timeLeft', timeLeft);
             localStorage.setItem('isPaused', isPaused);
+            localStorage.setItem('totalPomodoroTime', totalPomodoroTime);
+            localStorage.setItem('pauseCount', pauseCount);
+
+            let lastTimer = timerData[timerData.length - 1];
+            lastTimer.pauseCount = pauseCount;
+            lastTimer.totalPomodoroTime = Math.floor(totalPomodoroTime / 60);
+            // Save timerData to localStorage
+            localStorage.setItem('timerData', JSON.stringify(timerData));
         }
 
 
@@ -538,6 +598,12 @@
                 countdown = null;
             }
 
+            //NB!!!
+            // Set isPaused to false to trigger the date store in localstorage when first starting the timer
+            isPaused = false;
+            pauseCount = 0;
+            totalPomodoroTime = 0
+
             // Update the start button
             let startButton = document.getElementById('start');
             startButton.innerHTML = '<i class="fa-solid fa-play"></i>'; // Change button text to 'Start'
@@ -545,6 +611,39 @@
             document.getElementById('timer').classList.remove('active');
         }
 
+        console.log(JSON.parse(localStorage.getItem('timerData')))
+
+        document.getElementById('send').addEventListener('click', function () {
+            // Get the data from localStorage
+
+            let passwordInput = document.getElementById('password');
+
+            let data = JSON.parse(localStorage.getItem('timerData'))
+
+
+            login(passwordInput).then(token => {
+                // Send a POST request to your server
+                fetch('https://483d8b.pythonanywhere.com/addTime', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success :)') {
+                            console.log('Data successfully sent to the server!');
+                        } else {
+                            console.log('An error occurred: ' + data.message);
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error Stack:', error.stack);
+                    });
+            });
+        });
 
         // Reset user preferences to default values
         function resetValues() {
@@ -574,6 +673,20 @@
             document.getElementById('shortBreak-minutes').value = defaultValues['shortBreak'];
             document.getElementById('longBreak-minutes').value = defaultValues['longBreak'];
 
+            totalPomodoroTime = 0;
+            pauseCount = 0;
+            localStorage.removeItem('totalPomodoroTime');
+            localStorage.removeItem('startTimer');
+            localStorage.removeItem('isPaused');
+
+            //NB!!!
+            // Set isPaused to false to trigger the date store in localstorage when first starting the timer
+            isPaused = false;
+
+            // Reset timerData to an empty array
+            timerData = [];
+            // Remove timerData from localStorage
+            localStorage.removeItem('timerData');
 
             this.innerHTML = '<i class="fa-solid fa-trash-can"></i>...';
 
@@ -610,6 +723,32 @@
             document.getElementById('settings-popup').style.display = 'none';
         });
 
+
+        // Function to log in and get the token
+        function login(passwordInput) {
+            return new Promise((resolve, reject) => {
+                fetch('https://483d8b.pythonanywhere.com/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `password=${passwordInput.value}`,
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        resolve(data.token);
+                    })
+                    .catch(error => {
+                        console.error('There was a problem with the fetch operation: ', error);
+                        reject(error);
+                    });
+            });
+        }
 
     </script>
 
